@@ -9,7 +9,7 @@
   database = "uni-watcher"
   username = "postgres"
   password = "postgres"
-  synchronize = true
+  synchronize = false
   logging = false
 
 [upstream]

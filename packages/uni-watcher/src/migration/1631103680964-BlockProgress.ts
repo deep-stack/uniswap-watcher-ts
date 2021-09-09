@@ -1,56 +1,82 @@
-import { MigrationInterface, QueryRunner, Table } from 'typeorm';
+import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 
 export class BlockProgress1631103680964 implements MigrationInterface {
   public async up (queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(new Table({
-      name: 'BlockProgress',
+      name: 'block_progress',
       columns: [
         {
           name: 'id',
-          type: 'integer',
-          isPrimary: true
+          type: 'SERIAL'
         },
         {
           name: 'blockHash',
-          type: 'varchar'
+          type: 'varchar',
+          length: '66',
+          isNullable: false
         },
         {
           name: 'parentHash',
-          type: 'varchar'
+          type: 'varchar',
+          length: '66',
+          isNullable: false
         },
         {
           name: 'blockNumber',
-          type: 'integer'
+          type: 'integer',
+          isNullable: false
         },
         {
           name: 'blockTimestamp',
-          type: 'integer'
+          type: 'integer',
+          isNullable: false
         },
         {
           name: 'numEvents',
-          type: 'integer'
+          type: 'integer',
+          isNullable: false
         },
         {
           name: 'numProcessedEvents',
-          type: 'integer'
+          type: 'integer',
+          isNullable: false
         },
         {
           name: 'lastProcessedEventIndex',
-          type: 'integer'
+          type: 'integer',
+          isNullable: false
         },
         {
           name: 'isComplete',
-          type: 'boolean'
+          type: 'boolean',
+          isNullable: false
         },
         {
           name: 'isPruned',
-          type: 'boolean'
+          type: 'boolean',
+          isNullable: false,
+          default: false
         }
       ]
     }), true);
+
+    await queryRunner.createPrimaryKey('block_progress', ['id']);
+
+    await queryRunner.createIndex('block_progress', new TableIndex({
+      columnNames: ['blockHash'],
+      isUnique: true
+    }));
+
+    await queryRunner.createIndex('block_progress', new TableIndex({
+      columnNames: ['parentHash']
+    }));
+
+    await queryRunner.createIndex('block_progress', new TableIndex({
+      columnNames: ['blockNumber']
+    }));
   }
 
   public async down (queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('BlockProgress');
+    await queryRunner.dropTable('block_progress');
   }
 }

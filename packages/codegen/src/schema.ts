@@ -252,7 +252,7 @@ export class Schema {
 
   _addIPLDQuery (): void {
     this._composer.Query.addFields({
-      ipldBlock: {
+      getStateByCID: {
         type: this._composer.getOTC('ResultIPLDBlock'),
         args: {
           cid: 'String!'

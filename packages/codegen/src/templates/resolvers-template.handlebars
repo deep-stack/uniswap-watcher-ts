@@ -84,8 +84,8 @@ export const createResolvers = async (indexer: Indexer, eventWatcher: EventWatch
         return ipldBlock ? indexer.getResultIPLDBlock(ipldBlock) : undefined;
       },
 
-      lastIpldBlock: async (_: any, { blockHash, contractAddress }: { blockHash: string, contractAddress: string }) => {
-        log('lastIpldBlock', blockHash, contractAddress);
+      getState: async (_: any, { blockHash, contractAddress }: { blockHash: string, contractAddress: string }) => {
+        log('getState', blockHash, contractAddress);
 
         const ipldBlock = await indexer.getPrevIPLDBlock(blockHash, contractAddress);
 

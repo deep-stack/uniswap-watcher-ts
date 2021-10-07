@@ -261,7 +261,7 @@ export class Schema {
     });
 
     this._composer.Query.addFields({
-      lastIpldBlock: {
+      getState: {
         type: this._composer.getOTC('ResultIPLDBlock'),
         args: {
           blockHash: 'String!',

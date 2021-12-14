@@ -1321,15 +1321,15 @@ export class Indexer implements IndexerInterface {
 
   async _getPosition (block: Block, contractAddress: string, tx: Transaction, tokenId: bigint): Promise<Position | null> {
     const { hash: blockHash } = block;
-    let position = await this._db.getPosition({ id: tokenId.toString(), blockHash });
+    const position = await this._db.getPosition({ id: tokenId.toString(), blockHash });
 
     if (!position) {
       let positionResult;
 
       try {
-        console.time('time:indexer#_getPosition-eth_call_for_positions');
-        ({ value: positionResult } = await this._uniClient.positions(blockHash, contractAddress, tokenId));
-        console.timeEnd('time:indexer#_getPosition-eth_call_for_positions');
+        // console.time('time:indexer#_getPosition-eth_call_for_positions');
+        // ({ value: positionResult } = await this._uniClient.positions(blockHash, contractAddress, tokenId));
+        // console.timeEnd('time:indexer#_getPosition-eth_call_for_positions');
       } catch (error: any) {
         // The contract call reverts in situations where the position is minted and deleted in the same block.
         // From my investigation this happens in calls from BancorSwap.
@@ -1341,60 +1341,60 @@ export class Indexer implements IndexerInterface {
         }
       }
 
-      if (positionResult) {
-        // TODO: In subgraph factory is fetched by hardcoded factory address.
-        // Currently fetching first factory in database as only one exists.
-        const [factory] = await this._db.getModelEntitiesNoTx(Factory, { hash: blockHash }, {}, { limit: 1 });
+      // if (positionResult) {
+      //   // TODO: In subgraph factory is fetched by hardcoded factory address.
+      //   // Currently fetching first factory in database as only one exists.
+      //   const [factory] = await this._db.getModelEntitiesNoTx(Factory, { hash: blockHash }, {}, { limit: 1 });
 
-        console.time('time:indexer#_getPosition-eth_call_for_getPool');
-        const { value: poolAddress } = await this._uniClient.callGetPool(blockHash, factory.id, positionResult.token0, positionResult.token1, positionResult.fee);
-        console.timeEnd('time:indexer#_getPosition-eth_call_for_getPool');
+      //   console.time('time:indexer#_getPosition-eth_call_for_getPool');
+      //   const { value: poolAddress } = await this._uniClient.callGetPool(blockHash, factory.id, positionResult.token0, positionResult.token1, positionResult.fee);
+      //   console.timeEnd('time:indexer#_getPosition-eth_call_for_getPool');
 
-        position = new Position();
-        position.id = tokenId.toString();
+      //   position = new Position();
+      //   position.id = tokenId.toString();
 
-        const pool = await this._db.getPoolNoTx({ id: poolAddress, blockHash });
-        assert(pool);
-        position.pool = pool;
+      //   const pool = await this._db.getPoolNoTx({ id: poolAddress, blockHash });
+      //   assert(pool);
+      //   position.pool = pool;
 
-        const [token0, token1] = await Promise.all([
-          this._db.getTokenNoTx({ id: positionResult.token0, blockHash }),
-          this._db.getTokenNoTx({ id: positionResult.token1, blockHash })
-        ]);
-        assert(token0 && token1);
-        position.token0 = token0;
-        position.token1 = token1;
+      //   const [token0, token1] = await Promise.all([
+      //     this._db.getTokenNoTx({ id: positionResult.token0, blockHash }),
+      //     this._db.getTokenNoTx({ id: positionResult.token1, blockHash })
+      //   ]);
+      //   assert(token0 && token1);
+      //   position.token0 = token0;
+      //   position.token1 = token1;
 
-        const [tickLower, tickUpper] = await Promise.all([
-          this._db.getTickNoTx({ id: poolAddress.concat('#').concat(positionResult.tickLower.toString()), blockHash }),
-          this._db.getTickNoTx({ id: poolAddress.concat('#').concat(positionResult.tickUpper.toString()), blockHash })
-        ]);
-        assert(tickLower && tickUpper);
-        position.tickLower = tickLower;
-        position.tickUpper = tickUpper;
+      //   const [tickLower, tickUpper] = await Promise.all([
+      //     this._db.getTickNoTx({ id: poolAddress.concat('#').concat(positionResult.tickLower.toString()), blockHash }),
+      //     this._db.getTickNoTx({ id: poolAddress.concat('#').concat(positionResult.tickUpper.toString()), blockHash })
+      //   ]);
+      //   assert(tickLower && tickUpper);
+      //   position.tickLower = tickLower;
+      //   position.tickUpper = tickUpper;
 
-        position.feeGrowthInside0LastX128 = BigInt(positionResult.feeGrowthInside0LastX128.toString());
-        position.feeGrowthInside1LastX128 = BigInt(positionResult.feeGrowthInside1LastX128.toString());
-      }
+      //   position.feeGrowthInside0LastX128 = BigInt(positionResult.feeGrowthInside0LastX128.toString());
+      //   position.feeGrowthInside1LastX128 = BigInt(positionResult.feeGrowthInside1LastX128.toString());
+      // }
     }
 
     return position || null;
   }
 
   async _updateFeeVars (position: Position, block: Block, contractAddress: string, tokenId: bigint): Promise<Position> {
-    try {
-      console.time('time:indexer#_updateFeeVars-eth_call_for_positions');
-      const { value: positionResult } = await this._uniClient.positions(block.hash, contractAddress, tokenId);
-      console.timeEnd('time:indexer#_updateFeeVars-eth_call_for_positions');
+    // try {
+    //   console.time('time:indexer#_updateFeeVars-eth_call_for_positions');
+    //   const { value: positionResult } = await this._uniClient.positions(block.hash, contractAddress, tokenId);
+    //   console.timeEnd('time:indexer#_updateFeeVars-eth_call_for_positions');
 
-      if (positionResult) {
-        position.feeGrowthInside0LastX128 = BigInt(positionResult.feeGrowthInside0LastX128.toString());
-        position.feeGrowthInside1LastX128 = BigInt(positionResult.feeGrowthInside1LastX128.toString());
-      }
-    } catch (error) {
-      log('nfpm positions eth_call failed');
-      log(error);
-    }
+    //   if (positionResult) {
+    //     position.feeGrowthInside0LastX128 = BigInt(positionResult.feeGrowthInside0LastX128.toString());
+    //     position.feeGrowthInside1LastX128 = BigInt(positionResult.feeGrowthInside1LastX128.toString());
+    //   }
+    // } catch (error) {
+    //   log('nfpm positions eth_call failed');
+    //   log(error);
+    // }
 
     return position;
   }

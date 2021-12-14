@@ -13,31 +13,31 @@ import { StaticTokenDefinition } from './static-token-definition';
 export const fetchTokenSymbol = async (ethProvider: BaseProvider, blockHash: string, tokenAddress: string): Promise<string> => {
   const contract = new Contract(tokenAddress, abi, ethProvider);
   const contractSymbolBytes = new Contract(tokenAddress, ERC20SymbolBytesABI, ethProvider);
-  let symbolValue = 'unknown';
+  const symbolValue = 'unknown';
 
-  // Try types string and bytes32 for symbol.
-  try {
-    const result = await contract.symbol({ blockTag: blockHash });
-    symbolValue = result;
-  } catch (error) {
-    try {
-      const result = await contractSymbolBytes.symbol({ blockTag: blockHash });
+  // // Try types string and bytes32 for symbol.
+  // try {
+  //   const result = await contract.symbol({ blockTag: blockHash });
+  //   symbolValue = result;
+  // } catch (error) {
+  //   try {
+  //     const result = await contractSymbolBytes.symbol({ blockTag: blockHash });
 
-      // For broken pairs that have no symbol function exposed.
-      if (!isNullEthValue(result)) {
-        symbolValue = utils.parseBytes32String(result);
-      } else {
-        // Try with the static definition.
-        const staticTokenDefinition = StaticTokenDefinition.fromAddress(tokenAddress);
+  //     // For broken pairs that have no symbol function exposed.
+  //     if (!isNullEthValue(result)) {
+  //       symbolValue = utils.parseBytes32String(result);
+  //     } else {
+  //       // Try with the static definition.
+  //       const staticTokenDefinition = StaticTokenDefinition.fromAddress(tokenAddress);
 
-        if (staticTokenDefinition !== null) {
-          symbolValue = staticTokenDefinition.symbol;
-        }
-      }
-    } catch (error) {
-      // symbolValue is unknown if the calls revert.
-    }
-  }
+  //       if (staticTokenDefinition !== null) {
+  //         symbolValue = staticTokenDefinition.symbol;
+  //       }
+  //     }
+  //   } catch (error) {
+  //     // symbolValue is unknown if the calls revert.
+  //   }
+  // }
 
   return symbolValue;
 };
@@ -45,31 +45,31 @@ export const fetchTokenSymbol = async (ethProvider: BaseProvider, blockHash: str
 export const fetchTokenName = async (ethProvider: BaseProvider, blockHash: string, tokenAddress: string): Promise<string> => {
   const contract = new Contract(tokenAddress, abi, ethProvider);
   const contractNameBytes = new Contract(tokenAddress, ERC20NameBytesABI, ethProvider);
-  let nameValue = 'unknown';
+  const nameValue = 'unknown';
 
-  // Try types string and bytes32 for name.
-  try {
-    const result = await contract.name({ blockTag: blockHash });
-    nameValue = result;
-  } catch (error) {
-    try {
-      const result = await contractNameBytes.name({ blockTag: blockHash });
+  // // Try types string and bytes32 for name.
+  // try {
+  //   const result = await contract.name({ blockTag: blockHash });
+  //   nameValue = result;
+  // } catch (error) {
+  //   try {
+  //     const result = await contractNameBytes.name({ blockTag: blockHash });
 
-      // For broken pairs that have no name function exposed.
-      if (!isNullEthValue(result)) {
-        nameValue = utils.parseBytes32String(result);
-      } else {
-        // Try with the static definition.
-        const staticTokenDefinition = StaticTokenDefinition.fromAddress(tokenAddress);
+  //     // For broken pairs that have no name function exposed.
+  //     if (!isNullEthValue(result)) {
+  //       nameValue = utils.parseBytes32String(result);
+  //     } else {
+  //       // Try with the static definition.
+  //       const staticTokenDefinition = StaticTokenDefinition.fromAddress(tokenAddress);
 
-        if (staticTokenDefinition !== null) {
-          nameValue = staticTokenDefinition.name;
-        }
-      }
-    } catch (error) {
-      // nameValue is unknown if the calls revert.
-    }
-  }
+  //       if (staticTokenDefinition !== null) {
+  //         nameValue = staticTokenDefinition.name;
+  //       }
+  //     }
+  //   } catch (error) {
+  //     // nameValue is unknown if the calls revert.
+  //   }
+  // }
 
   return nameValue;
 };
@@ -79,6 +79,7 @@ export const fetchTokenTotalSupply = async (ethProvider: BaseProvider, blockHash
   let totalSupplyValue = null;
 
   try {
+    throw new Error('Skip eth_calls');
     const result = await contract.totalSupply({ blockTag: blockHash });
     totalSupplyValue = result.toString();
   } catch (error) {
@@ -95,6 +96,7 @@ export const fetchTokenDecimals = async (ethProvider: BaseProvider, blockHash: s
   let decimalValue = null;
 
   try {
+    throw new Error('Skip eth_calls');
     const result = await contract.decimals({ blockTag: blockHash });
     decimalValue = result.toString();
   } catch (error) {

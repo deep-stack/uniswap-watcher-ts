@@ -86,11 +86,13 @@ export class Database implements DatabaseInterface {
       }
     };
 
+    console.time('time:database#getFactory-db');
     let entity = await repo.findOne(findOptions as FindOneOptions<Factory>);
 
     if (!entity && findOptions.where.blockHash) {
       entity = await this._baseDatabase.getPrevEntityVersion(queryRunner, repo, findOptions);
     }
+    console.timeEnd('time:database#getFactory-db');
 
     return entity;
   }
@@ -114,11 +116,13 @@ export class Database implements DatabaseInterface {
       }
     };
 
+    console.time('time:database#getBundle-db');
     let entity = await repo.findOne(findOptions as FindOneOptions<Bundle>);
 
     if (!entity && findOptions.where.blockHash) {
       entity = await this._baseDatabase.getPrevEntityVersion(queryRunner, repo, findOptions);
     }
+    console.timeEnd('time:database#getBundle-db');
 
     return entity;
   }
@@ -142,6 +146,7 @@ export class Database implements DatabaseInterface {
       }
     };
 
+    console.time('time:database#getToken-db');
     let entity = await repo.findOne(findOptions as FindOneOptions<Token>);
 
     if (!entity && findOptions.where.blockHash) {
@@ -162,6 +167,7 @@ export class Database implements DatabaseInterface {
         [entity]
       );
     }
+    console.timeEnd('time:database#getToken-db');
 
     return entity;
   }
@@ -199,6 +205,7 @@ export class Database implements DatabaseInterface {
       }
     };
 
+    console.time('time:database#getPool-db');
     let entity = await repo.findOne(findOptions as FindOneOptions<Pool>);
 
     if (!entity && findOptions.where.blockHash) {
@@ -224,6 +231,7 @@ export class Database implements DatabaseInterface {
         [entity]
       );
     }
+    console.timeEnd('time:database#getPool-db');
 
     return entity;
   }
@@ -262,6 +270,7 @@ export class Database implements DatabaseInterface {
         }
       };
 
+      console.time('time:database#getPosition-db');
       entity = await repo.findOne(findOptions as FindOneOptions<Position>);
 
       if (!entity && findOptions.where.blockHash) {
@@ -307,6 +316,7 @@ export class Database implements DatabaseInterface {
           [entity]
         );
       }
+      console.timeEnd('time:database#getPosition-db');
     } finally {
       await queryRunner.release();
     }
@@ -329,6 +339,7 @@ export class Database implements DatabaseInterface {
       }
     };
 
+    console.time('time:database#getTick-db');
     let entity = await repo.findOne(findOptions as FindOneOptions<Tick>);
 
     if (!entity && findOptions.where.blockHash) {
@@ -349,6 +360,7 @@ export class Database implements DatabaseInterface {
         [entity]
       );
     }
+    console.timeEnd('time:database#getTick-db');
 
     return entity;
   }
@@ -382,6 +394,7 @@ export class Database implements DatabaseInterface {
       }
     };
 
+    console.time('time:database#getPoolDayData-db');
     let entity = await repo.findOne(findOptions as FindOneOptions<PoolDayData>);
 
     if (!entity && findOptions.where.blockHash) {
@@ -402,6 +415,7 @@ export class Database implements DatabaseInterface {
         [entity]
       );
     }
+    console.timeEnd('time:database#getPoolDayData-db');
 
     return entity;
   }
@@ -421,6 +435,7 @@ export class Database implements DatabaseInterface {
       }
     };
 
+    console.time('time:database#getPoolHourData-db');
     let entity = await repo.findOne(findOptions as FindOneOptions<PoolHourData>);
 
     if (!entity && findOptions.where.blockHash) {
@@ -441,6 +456,7 @@ export class Database implements DatabaseInterface {
         [entity]
       );
     }
+    console.timeEnd('time:database#getPoolHourData-db');
 
     return entity;
   }
@@ -460,11 +476,13 @@ export class Database implements DatabaseInterface {
       }
     };
 
+    console.time('time:database#getUniswapDayData-db');
     let entity = await repo.findOne(findOptions as FindOneOptions<UniswapDayData>);
 
     if (!entity && findOptions.where.blockHash) {
       entity = await this._baseDatabase.getPrevEntityVersion(queryRunner, repo, findOptions);
     }
+    console.timeEnd('time:database#getUniswapDayData-db');
 
     return entity;
   }
@@ -484,6 +502,7 @@ export class Database implements DatabaseInterface {
       }
     };
 
+    console.time('time:database#getTokenDayData-db');
     let entity = await repo.findOne(findOptions as FindOneOptions<TokenDayData>);
 
     if (!entity && findOptions.where.blockHash) {
@@ -504,6 +523,7 @@ export class Database implements DatabaseInterface {
         [entity]
       );
     }
+    console.timeEnd('time:database#getTokenDayData-db');
 
     return entity;
   }
@@ -523,6 +543,7 @@ export class Database implements DatabaseInterface {
       }
     };
 
+    console.time('time:database#getTokenHourData-db');
     let entity = await repo.findOne(findOptions as FindOneOptions<TokenHourData>);
 
     if (!entity && findOptions.where.blockHash) {
@@ -543,6 +564,7 @@ export class Database implements DatabaseInterface {
         [entity]
       );
     }
+    console.timeEnd('time:database#getTokenHourData-db');
 
     return entity;
   }
@@ -562,6 +584,7 @@ export class Database implements DatabaseInterface {
       }
     };
 
+    console.time('time:database#getTickDayData-db');
     let entity = await repo.findOne(findOptions as FindOneOptions<TickDayData>);
 
     if (!entity && findOptions.where.blockHash) {
@@ -587,6 +610,7 @@ export class Database implements DatabaseInterface {
         [entity]
       );
     }
+    console.timeEnd('time:database#getTickDayData-db');
 
     return entity;
   }
@@ -606,11 +630,13 @@ export class Database implements DatabaseInterface {
       }
     };
 
+    console.time('time:database#getTransaction-db');
     let entity = await repo.findOne(findOptions as FindOneOptions<Transaction>);
 
     if (!entity && findOptions.where.blockHash) {
       entity = await this._baseDatabase.getPrevEntityVersion(queryRunner, repo, findOptions);
     }
+    console.timeEnd('time:database#getTransaction-db');
 
     return entity;
   }
@@ -637,119 +663,187 @@ export class Database implements DatabaseInterface {
     const repo = queryRunner.manager.getRepository(Factory);
     factory.blockNumber = block.number;
     factory.blockHash = block.hash;
-    return repo.save(factory);
+    console.time('time:database#saveFactory-db');
+    const data = repo.save(factory);
+    console.timeEnd('time:database#saveFactory-db');
+
+    return data;
   }
 
   async saveBundle (queryRunner: QueryRunner, bundle: Bundle, block: Block): Promise<Bundle> {
     const repo = queryRunner.manager.getRepository(Bundle);
     bundle.blockNumber = block.number;
     bundle.blockHash = block.hash;
-    return repo.save(bundle);
+    console.time('time:database#saveBundle-db');
+    const data = repo.save(bundle);
+    console.timeEnd('time:database#saveBundle-db');
+
+    return data;
   }
 
   async savePool (queryRunner: QueryRunner, pool: Pool, block: Block): Promise<Pool> {
     const repo = queryRunner.manager.getRepository(Pool);
     pool.blockNumber = block.number;
     pool.blockHash = block.hash;
-    return repo.save(pool);
+    console.time('time:database#savePool-db');
+    const data = repo.save(pool);
+    console.timeEnd('time:database#savePool-db');
+
+    return data;
   }
 
   async savePoolDayData (queryRunner: QueryRunner, poolDayData: PoolDayData, block: Block): Promise<PoolDayData> {
     const repo = queryRunner.manager.getRepository(PoolDayData);
     poolDayData.blockNumber = block.number;
     poolDayData.blockHash = block.hash;
-    return repo.save(poolDayData);
+    console.time('time:database#savePoolDayData-db');
+    const data = repo.save(poolDayData);
+    console.timeEnd('time:database#savePoolDayData-db');
+
+    return data;
   }
 
   async savePoolHourData (queryRunner: QueryRunner, poolHourData: PoolHourData, block: Block): Promise<PoolHourData> {
     const repo = queryRunner.manager.getRepository(PoolHourData);
     poolHourData.blockNumber = block.number;
     poolHourData.blockHash = block.hash;
-    return repo.save(poolHourData);
+    console.time('time:database#savePoolHourData-db');
+    const data = repo.save(poolHourData);
+    console.timeEnd('time:database#savePoolHourData-db');
+
+    return data;
   }
 
   async saveToken (queryRunner: QueryRunner, token: Token, block: Block): Promise<Token> {
     const repo = queryRunner.manager.getRepository(Token);
     token.blockNumber = block.number;
     token.blockHash = block.hash;
-    return repo.save(token);
+    console.time('time:database#saveToken-db');
+    const data = repo.save(token);
+    console.timeEnd('time:database#saveToken-db');
+
+    return data;
   }
 
   async saveTransaction (queryRunner: QueryRunner, transaction: Transaction, block: Block): Promise<Transaction> {
     const repo = queryRunner.manager.getRepository(Transaction);
     transaction.blockNumber = block.number;
     transaction.blockHash = block.hash;
-    return repo.save(transaction);
+    console.time('time:database#saveTransaction-db');
+    const data = repo.save(transaction);
+    console.timeEnd('time:database#saveTransaction-db');
+
+    return data;
   }
 
   async saveUniswapDayData (queryRunner: QueryRunner, uniswapDayData: UniswapDayData, block: Block): Promise<UniswapDayData> {
     const repo = queryRunner.manager.getRepository(UniswapDayData);
     uniswapDayData.blockNumber = block.number;
     uniswapDayData.blockHash = block.hash;
-    return repo.save(uniswapDayData);
+    console.time('time:database#saveUniswapDayData-db');
+    const data = repo.save(uniswapDayData);
+    console.timeEnd('time:database#saveUniswapDayData-db');
+
+    return data;
   }
 
   async saveTokenDayData (queryRunner: QueryRunner, tokenDayData: TokenDayData, block: Block): Promise<TokenDayData> {
     const repo = queryRunner.manager.getRepository(TokenDayData);
     tokenDayData.blockNumber = block.number;
     tokenDayData.blockHash = block.hash;
-    return repo.save(tokenDayData);
+    console.time('time:database#saveTokenDayData-db');
+    const data = repo.save(tokenDayData);
+    console.timeEnd('time:database#saveTokenDayData-db');
+
+    return data;
   }
 
   async saveTokenHourData (queryRunner: QueryRunner, tokenHourData: TokenHourData, block: Block): Promise<TokenHourData> {
     const repo = queryRunner.manager.getRepository(TokenHourData);
     tokenHourData.blockNumber = block.number;
     tokenHourData.blockHash = block.hash;
-    return repo.save(tokenHourData);
+    console.time('time:database#saveTokenHourData-db');
+    const data = repo.save(tokenHourData);
+    console.timeEnd('time:database#saveTokenHourData-db');
+
+    return data;
   }
 
   async saveTick (queryRunner: QueryRunner, tick: Tick, block: Block): Promise<Tick> {
     const repo = queryRunner.manager.getRepository(Tick);
     tick.blockNumber = block.number;
     tick.blockHash = block.hash;
-    return repo.save(tick);
+    console.time('time:database#saveTick-db');
+    const data = repo.save(tick);
+    console.timeEnd('time:database#saveTick-db');
+
+    return data;
   }
 
   async saveTickDayData (queryRunner: QueryRunner, tickDayData: TickDayData, block: Block): Promise<TickDayData> {
     const repo = queryRunner.manager.getRepository(TickDayData);
     tickDayData.blockNumber = block.number;
     tickDayData.blockHash = block.hash;
-    return repo.save(tickDayData);
+    console.time('time:database#saveTickDayData-db');
+    const data = repo.save(tickDayData);
+    console.timeEnd('time:database#saveTickDayData-db');
+
+    return data;
   }
 
   async savePosition (queryRunner: QueryRunner, position: Position, block: Block): Promise<Position> {
     const repo = queryRunner.manager.getRepository(Position);
     position.blockNumber = block.number;
     position.blockHash = block.hash;
-    return repo.save(position);
+    console.time('time:database#savePosition-db');
+    const data = repo.save(position);
+    console.timeEnd('time:database#savePosition-db');
+
+    return data;
   }
 
   async savePositionSnapshot (queryRunner: QueryRunner, positionSnapshot: PositionSnapshot, block: Block): Promise<PositionSnapshot> {
     const repo = queryRunner.manager.getRepository(PositionSnapshot);
     positionSnapshot.blockNumber = block.number;
     positionSnapshot.blockHash = block.hash;
-    return repo.save(positionSnapshot);
+    console.time('time:database#savePositionSnapshot-db');
+    const data = repo.save(positionSnapshot);
+    console.timeEnd('time:database#savePositionSnapshot-db');
+
+    return data;
   }
 
   async saveMint (queryRunner: QueryRunner, mint: Mint, block: Block): Promise<Mint> {
     const repo = queryRunner.manager.getRepository(Mint);
     mint.blockNumber = block.number;
     mint.blockHash = block.hash;
-    return repo.save(mint);
+    console.time('time:database#saveMint-db');
+    const data = repo.save(mint);
+    console.timeEnd('time:database#saveMint-db');
+
+    return data;
   }
 
   async saveBurn (queryRunner: QueryRunner, burn: Burn, block: Block): Promise<Burn> {
     const repo = queryRunner.manager.getRepository(Burn);
     burn.blockNumber = block.number;
     burn.blockHash = block.hash;
-    return repo.save(burn);
+    console.time('time:database#saveBurn-db');
+    const data = repo.save(burn);
+    console.timeEnd('time:database#saveBurn-db');
+
+    return data;
   }
 
   async saveSwap (queryRunner: QueryRunner, swap: Swap, block: Block): Promise<Swap> {
     const repo = queryRunner.manager.getRepository(Swap);
     swap.blockNumber = block.number;
     swap.blockHash = block.hash;
-    return repo.save(swap);
+    console.time('time:database#saveSwap-db');
+    const data = repo.save(swap);
+    console.timeEnd('time:database#saveSwap-db');
+
+    return data;
   }
 
   async getContracts (): Promise<Contract[]> {

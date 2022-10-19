@@ -14,7 +14,21 @@ import * as codec from '@ipld/dag-cbor';
 import { Client as UniClient } from '@vulcanize/uni-watcher';
 import { Client as ERC20Client } from '@vulcanize/erc20-watcher';
 import { GraphDecimal, JobQueue } from '@vulcanize/util';
-import { ServerConfig, IPFSClient, IpldStatus as IpldStatusInterface, ValueResult, Indexer as BaseIndexer, IndexerInterface, QueryOptions, OrderDirection, BlockHeight, Where, ResultIPLDBlock, eventProcessingEthCallDuration } from '@cerc-io/util';
+import {
+  ServerConfig,
+  IPFSClient,
+  IpldStatus as IpldStatusInterface,
+  ValueResult,
+  Indexer as BaseIndexer,
+  IndexerInterface,
+  QueryOptions,
+  OrderDirection,
+  BlockHeight,
+  Where,
+  ResultIPLDBlock,
+  eventProcessingEthCallDuration,
+  cachePrunedEntitiesCount
+} from '@cerc-io/util';
 import { EthClient } from '@cerc-io/ipld-eth-client';
 import { StorageLayout, MappingKey } from '@cerc-io/solidity-mapper';
 
@@ -239,8 +253,17 @@ export class Indexer implements IndexerInterface {
           entities: new Map()
         }
       );
+    }
 
-      log(`Size of cachedEntities.frothyBlocks map: ${this._db.cachedEntities.frothyBlocks.size}`);
+    log(`Size of cachedEntities.frothyBlocks map: ${this._db.cachedEntities.frothyBlocks.size}`);
+    this._measureCachedPrunedEntities();
+
+    // Check if it is time to clear entities cache.
+    if (blockProgress.blockNumber % this._serverConfig.clearEntitiesCacheInterval === 0) {
+      log(`Clearing cachedEntities.latestPrunedEntities at block ${blockProgress.blockNumber}`);
+      // Clearing only pruned region as frothy region cache gets updated in pruning queue.
+      this._db.cachedEntities.latestPrunedEntities.clear();
+      log(`Cleared cachedEntities.latestPrunedEntities. Map size: ${this._db.cachedEntities.latestPrunedEntities.size}`);
     }
   }
 
@@ -620,6 +643,14 @@ export class Indexer implements IndexerInterface {
   _clearCachedEntities () {
     this._db.cachedEntities.frothyBlocks.clear();
     this._db.cachedEntities.latestPrunedEntities.clear();
+  }
+
+  _measureCachedPrunedEntities () {
+    const totalEntities = Array.from(this._db.cachedEntities.latestPrunedEntities.values())
+      .reduce((acc, idEntitiesMap) => acc + idEntitiesMap.size, 0);
+
+    log(`Total entities in cachedEntities.latestPrunedEntities map: ${totalEntities}`);
+    cachePrunedEntitiesCount.set(totalEntities);
   }
 
   async _fetchEvents (block: DeepPartial<BlockProgress>): Promise<DeepPartial<Event>[]> {

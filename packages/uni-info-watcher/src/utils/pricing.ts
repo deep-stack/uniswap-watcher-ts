@@ -12,6 +12,7 @@ import { exponentToBigDecimal, safeDiv } from '.';
 import { Database } from '../database';
 import { Token } from '../entity/Token';
 import { Block } from '../events';
+import { FIRST_GRAFT_BLOCK } from './constants';
 
 // TODO: Move constants to config.
 const WETH_ADDRESS = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
@@ -42,6 +43,15 @@ export const WHITELIST_TOKENS: string[] = [
   '0x956f47f50a910163d8bf957cf5846d573e7f87ca', // FEI
   '0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0', // MATIC
   '0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9' // AAVE
+];
+
+const STABLE_COINS: string[] = [
+  '0x6b175474e89094c44da98b954eedeac495271d0f',
+  '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+  '0xdac17f958d2ee523a2206206994597c13d831ec7',
+  '0x0000000000085d4780b73119b644ae5ecd22b376',
+  '0x956f47f50a910163d8bf957cf5846d573e7f87ca',
+  '0x4dd28568d05f09b02220b09c2cb307bfd837cb95'
 ];
 
 const MINIMUM_ETH_LOCKED = new GraphDecimal(52);
@@ -96,37 +106,45 @@ export const findEthPerToken = async (db: Database, dbTx: QueryRunner, token: To
   let largestLiquidityETH = new GraphDecimal(0);
   let priceSoFar = new GraphDecimal(0);
 
-  for (let i = 0; i < whiteList.length; ++i) {
-    const poolAddress = whiteList[i];
-    const pool = await db.getPool(dbTx, { id: poolAddress, blockHash: block.hash });
-    assert(pool);
+  // hardcoded fix for incorrect rates
+  // if whitelist includes token - get the safe price
+  if (block.number > FIRST_GRAFT_BLOCK && STABLE_COINS.includes(token.id)) {
+    const bundle = await db.getBundle(dbTx, { id: '1', blockHash: block.hash });
+    assert(bundle);
+    priceSoFar = safeDiv(new GraphDecimal(1), bundle.ethPriceUSD);
+  } else {
+    for (let i = 0; i < whiteList.length; ++i) {
+      const poolAddress = whiteList[i];
+      const pool = await db.getPool(dbTx, { id: poolAddress, blockHash: block.hash });
+      assert(pool);
 
-    if (BigNumber.from(pool.liquidity).gt(0)) {
-      if (pool.token0 === token.id) {
-        // whitelist token is token1
-        const token1 = await db.getToken(dbTx, { id: pool.token1, blockHash: block.hash });
-        assert(token1);
+      if (BigNumber.from(pool.liquidity).gt(0)) {
+        if (pool.token0 === token.id) {
+          // whitelist token is token1
+          const token1 = await db.getToken(dbTx, { id: pool.token1, blockHash: block.hash });
+          assert(token1);
 
-        // get the derived ETH in pool
-        const ethLocked = pool.totalValueLockedToken1.times(token1.derivedETH);
+          // get the derived ETH in pool
+          const ethLocked = pool.totalValueLockedToken1.times(token1.derivedETH);
 
-        if (ethLocked.gt(largestLiquidityETH) && ethLocked.gt(MINIMUM_ETH_LOCKED)) {
-          largestLiquidityETH = ethLocked;
-          // token1 per our token * Eth per token1
-          priceSoFar = pool.token1Price.times(token1.derivedETH);
+          if (ethLocked.gt(largestLiquidityETH) && ethLocked.gt(MINIMUM_ETH_LOCKED)) {
+            largestLiquidityETH = ethLocked;
+            // token1 per our token * Eth per token1
+            priceSoFar = pool.token1Price.times(token1.derivedETH);
+          }
         }
-      }
-      if (pool.token1 === token.id) {
-        const token0 = await db.getToken(dbTx, { id: pool.token0, blockHash: block.hash });
-        assert(token0);
+        if (pool.token1 === token.id) {
+          const token0 = await db.getToken(dbTx, { id: pool.token0, blockHash: block.hash });
+          assert(token0);
 
-        // get the derived ETH in pool
-        const ethLocked = pool.totalValueLockedToken0.times(token0.derivedETH);
+          // get the derived ETH in pool
+          const ethLocked = pool.totalValueLockedToken0.times(token0.derivedETH);
 
-        if (ethLocked.gt(largestLiquidityETH) && ethLocked.gt(MINIMUM_ETH_LOCKED)) {
-          largestLiquidityETH = ethLocked;
-          // token0 per our token * ETH per token0
-          priceSoFar = pool.token0Price.times(token0.derivedETH);
+          if (ethLocked.gt(largestLiquidityETH) && ethLocked.gt(MINIMUM_ETH_LOCKED)) {
+            largestLiquidityETH = ethLocked;
+            // token0 per our token * ETH per token0
+            priceSoFar = pool.token0Price.times(token0.derivedETH);
+          }
         }
       }
     }

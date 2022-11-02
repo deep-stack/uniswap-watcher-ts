@@ -819,6 +819,13 @@ export class Indexer implements IndexerInterface {
 
       pool = await this._db.savePool(dbTx, pool, block);
 
+      if (block.number >= 13450924) {
+        // Temp workaround to fix mismatch of Factory totalVolumeUSD and totalFeesUSD values with hosted subgraph endpoint
+        if (!WHITELIST_TOKENS.includes('0x4dd28568d05f09b02220b09c2cb307bfd837cb95')) {
+          WHITELIST_TOKENS.push('0x4dd28568d05f09b02220b09c2cb307bfd837cb95');
+        }
+      }
+
       // Update white listed pools.
       if (WHITELIST_TOKENS.includes(token0.id) || this._isDemo) {
         token1.whitelistPools.push(pool.id);
@@ -1283,7 +1290,7 @@ export class Indexer implements IndexerInterface {
       const amount1USD = amount1ETH.times(bundle.ethPriceUSD);
 
       // Get amount that should be tracked only - div 2 because cant count both input and output as volume.
-      const trackedAmountUSD = await getTrackedAmountUSD(this._db, dbTx, amount0Abs, token0, amount1Abs, token1, this._isDemo);
+      const trackedAmountUSD = await getTrackedAmountUSD(this._db, dbTx, amount0Abs, token0, amount1Abs, token1, block, this._isDemo);
       const amountTotalUSDTracked = trackedAmountUSD.div(new GraphDecimal('2'));
       const amountTotalETHTracked = safeDiv(amountTotalUSDTracked, bundle.ethPriceUSD);
       const amountTotalUSDUntracked = amount0USD.plus(amount1USD).div(new GraphDecimal('2'));

@@ -636,6 +636,11 @@ export class Database implements DatabaseInterface {
       .andWhere('blockProgress.is_pruned = :isPruned', { isPruned: false })
       .groupBy('subTable.id');
 
+    if (where.id) {
+      subQuery = this._baseDatabase.buildQuery(repo, subQuery, { id: where.id });
+      delete where.id;
+    }
+
     if (block.hash) {
       const { canonicalBlockNumber, blockHashes } = await this._baseDatabase.getFrothyRegion(queryRunner, block.hash);
 
@@ -695,6 +700,11 @@ export class Database implements DatabaseInterface {
       .andWhere('blockProgress.is_pruned = :isPruned', { isPruned: false })
       .addOrderBy('subTable.id', 'ASC')
       .addOrderBy('subTable.block_number', 'DESC');
+
+    if (where.id) {
+      subQuery = this._baseDatabase.buildQuery(repo, subQuery, { id: where.id });
+      delete where.id;
+    }
 
     if (block.hash) {
       const { canonicalBlockNumber, blockHashes } = await this._baseDatabase.getFrothyRegion(queryRunner, block.hash);

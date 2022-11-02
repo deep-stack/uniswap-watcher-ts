@@ -65,7 +65,8 @@ export const DEFAULT_LIMIT = 100;
 export enum ENTITY_QUERY_TYPE {
   SINGULAR,
   DISTINCT_ON,
-  GROUP_BY
+  GROUP_BY,
+  UNIQUE
 }
 
 // Cache for updated entities used in job-runner event processing.
@@ -85,12 +86,12 @@ export interface CachedEntities {
 const ENTITY_QUERY_TYPE_MAP = new Map<new() => any, number>([
   [Bundle, ENTITY_QUERY_TYPE.SINGULAR],
   [Factory, ENTITY_QUERY_TYPE.SINGULAR],
-  [Pool, ENTITY_QUERY_TYPE.DISTINCT_ON],
-  [Token, ENTITY_QUERY_TYPE.DISTINCT_ON],
+  [Pool, ENTITY_QUERY_TYPE.GROUP_BY],
+  [Token, ENTITY_QUERY_TYPE.GROUP_BY],
   [Burn, ENTITY_QUERY_TYPE.DISTINCT_ON],
   [Mint, ENTITY_QUERY_TYPE.DISTINCT_ON],
   [Swap, ENTITY_QUERY_TYPE.DISTINCT_ON],
-  [Transaction, ENTITY_QUERY_TYPE.DISTINCT_ON],
+  [Transaction, ENTITY_QUERY_TYPE.UNIQUE],
   [TokenDayData, ENTITY_QUERY_TYPE.DISTINCT_ON],
   [TokenHourData, ENTITY_QUERY_TYPE.DISTINCT_ON],
   [PoolDayData, ENTITY_QUERY_TYPE.DISTINCT_ON],
@@ -574,6 +575,10 @@ export class Database implements DatabaseInterface {
         entities = await this.getModelEntitiesDistinctOn(queryRunner, entity, block, where, queryOptions);
         break;
 
+      case ENTITY_QUERY_TYPE.UNIQUE:
+        entities = await this.getModelEntitiesUnique(queryRunner, entity, block, where, queryOptions);
+        break;
+
       case ENTITY_QUERY_TYPE.GROUP_BY:
         entities = await this.getModelEntitiesGroupBy(queryRunner, entity, block, where, queryOptions);
         break;
@@ -766,6 +771,56 @@ export class Database implements DatabaseInterface {
     }
 
     selectQueryBuilder = this._baseDatabase.buildQuery(repo, selectQueryBuilder, where);
+
+    const entities = await selectQueryBuilder.getMany();
+
+    return entities as Entity[];
+  }
+
+  async getModelEntitiesUnique<Entity> (
+    queryRunner: QueryRunner,
+    entity: new () => Entity,
+    block: BlockHeight,
+    where: Where = {},
+    queryOptions: QueryOptions = {}
+  ): Promise<Entity[]> {
+    const repo = queryRunner.manager.getRepository(entity);
+    const { tableName } = repo.metadata;
+
+    let selectQueryBuilder = repo.createQueryBuilder(tableName)
+      .addFrom('block_progress', 'blockProgress')
+      .where(`${tableName}.block_hash = blockProgress.block_hash`)
+      .andWhere('blockProgress.is_pruned = :isPruned', { isPruned: false });
+
+    if (block.hash) {
+      const { canonicalBlockNumber, blockHashes } = await this._baseDatabase.getFrothyRegion(queryRunner, block.hash);
+
+      selectQueryBuilder = selectQueryBuilder
+        .andWhere(new Brackets(qb => {
+          qb.where(`${tableName}.block_hash IN (:...blockHashes)`, { blockHashes })
+            .orWhere(`${tableName}.block_number <= :canonicalBlockNumber`, { canonicalBlockNumber });
+        }));
+    }
+
+    if (block.number) {
+      selectQueryBuilder = selectQueryBuilder.andWhere(`${tableName}.block_number <= :blockNumber`, { blockNumber: block.number });
+    }
+
+    selectQueryBuilder = this._baseDatabase.buildQuery(repo, selectQueryBuilder, where);
+
+    if (queryOptions.orderBy) {
+      selectQueryBuilder = this._baseDatabase.orderQuery(repo, selectQueryBuilder, queryOptions);
+    }
+
+    selectQueryBuilder = this._baseDatabase.orderQuery(repo, selectQueryBuilder, { ...queryOptions, orderBy: 'id' });
+
+    if (queryOptions.skip) {
+      selectQueryBuilder = selectQueryBuilder.offset(queryOptions.skip);
+    }
+
+    if (queryOptions.limit) {
+      selectQueryBuilder = selectQueryBuilder.limit(queryOptions.limit);
+    }
 
     const entities = await selectQueryBuilder.getMany();
 
